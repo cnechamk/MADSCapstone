@@ -1,8 +1,10 @@
 import json
-import pandas as pd
-from Scripts.urls import MinnURLs
-from bs4 import BeautifulSoup
+
 import requests
+import pandas as pd
+from tqdm import tqdm
+from bs4 import BeautifulSoup
+from Scripts.urls import MinnURLs
 from Scripts.Scrape import beige_book_urls
 
 
@@ -26,27 +28,30 @@ def _parse_page(url):
 
 
 def main(save_p: str, urls_p: str = None, url_col='url'):
-    def helper(row):
-        endpoint = row[url_col]
-        url = MinnURLs.urljoin(endpoint)
-        data = _parse_page(url)
-        return json.dumps(data)
-
     if urls_p is None:
         df = beige_book_urls.main()
     else:
         df = pd.read_csv(urls_p)
 
-    df['text'] = df.apply(helper, axis=1)
+    df['date'] = pd.to_datetime(df['date'], format="%B %Y")
+
+    n = len(df)
+    text_list = []
+    for row in tqdm(df.itertuples(), total=n):
+        endpoint = getattr(row, url_col)
+        url = MinnURLs.urljoin(endpoint)
+        data = _parse_page(url)
+        text_list.append(json.dumps(data))
+
+    df['text'] = text_list
     df.to_csv(save_p, index=False)
 
-
 if __name__ == "__main__":
-    from argparse import ArgumentParser
-
-    parser = ArgumentParser(description="Scrapes beige books text and adds to dataframe")
-    parser.add_argument("save_p", type=str, help="Where to save the csv with scraped data")
-    parser.add_argument("urls_p", type=str, help=)
+    # from argparse import ArgumentParser
+    #
+    # parser = ArgumentParser(description="Scrapes beige books text and adds to dataframe")
+    # parser.add_argument("save_p", type=str, help="Where to save the csv with scraped data")
+    # parser.add_argument("urls_p", type=str, help="URLs ")
     p = "/Users/joshfisher/PycharmProjects/MADSCapstone/Data/beige_book_urls.csv"
     save_p = "/Users/joshfisher/PycharmProjects/MADSCapstone/Data/beige_books.csv"
 
