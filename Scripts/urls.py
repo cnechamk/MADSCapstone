@@ -57,9 +57,7 @@ class FedURLs(_BaseURLs):
 
 
 if __name__ == "__main__":
-    fed_urls = FedURLs()
-    url = fed_urls.urljoin("test")
-    print(url)
+    print(MinnURLs.urljoin("/beige-book-reports/2023/2023-04-cl"))
     # hist_urls = fed_urls.yield_historical_materials_by_year()
     # for url in hist_urls:
     #     print(url)
