@@ -6,6 +6,7 @@ import pandas as pd
 from tqdm.contrib.concurrent import process_map  # or thread_map
 
 from Scripts.Scrape.utils import *
+from Scripts.Scrape.urls import FedURLs
 
 month_d = {
     "Jan": "January",
@@ -28,6 +29,7 @@ month_d = {
     "December": 12
 }
 
+
 def _postprocess_dates(df):
     df.month = df.month.str.split("/", expand=True)[0].replace(month_d).replace(month_d)
     df.day = df.day.str.split("-", expand=True)[0].str.split(' ', expand=True)[0]
@@ -36,7 +38,7 @@ def _postprocess_dates(df):
 
 
 def recent_fomc():
-    url = "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+    url = FedURLs.fomc_recent_dates
     res = requests.get(url)
 
     soup = BeautifulSoup(res.content, 'lxml')
@@ -66,12 +68,8 @@ def recent_fomc():
     return df
 
 
-def get_url(year):
-    assert isinstance(year, int) and len(str(year)) == 4, "pass a valid year"
-    return f"https://www.federalreserve.gov/monetarypolicy/fomchistorical{year}.htm"
-
 def _parse_year(year):
-    url = get_url(year)
+    url = FedURLs.get_historical_materials_by_year(year)
     rows = {'year': [], 'header': []}
     headers = {'User-Agent': get_random_user_agent()}
     time.sleep(random.choice([0.3, 0.5, 1]))
@@ -84,6 +82,7 @@ def _parse_year(year):
         rows['header'].append(header.text)
 
     return pd.DataFrame(rows)
+
 
 def _get_historic_dates():
     dfs = process_map(_parse_year, range(1930, 2019))

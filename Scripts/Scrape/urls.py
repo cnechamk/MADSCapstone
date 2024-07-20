@@ -28,7 +28,11 @@ class FedURLs(_BaseURLs):
         "monetarypolicy/fomc_historical_year.htm")
     beige_books_archive_url = urljoin(  # page has links to various years' beige books
         base_url,
-        "/monetarypolicy/beige-book-archive.htm")
+        "monetarypolicy/beige-book-archive.htm")
+    fomc_recent_dates = urljoin(  # page has datas of FOMC for last 5 years
+        base_url,
+        "monetarypolicy/fomccalendars.htm"
+    )
 
     @classmethod
     def get_historical_materials_by_year(cls, year: int = None):
