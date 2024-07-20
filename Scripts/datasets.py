@@ -2,8 +2,9 @@ import pickle
 import os.path
 from typing import Tuple
 
-import pandas as pd
+import torch
 from torch.utils.data import Dataset
+import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from Scripts import preprocess_data as prepro
@@ -62,7 +63,9 @@ class FOMCImpactDataset(Dataset):
         index = group.district.sort_values().index
         X = self.X[index]
         y = group.diff_norm.iloc[0]  # all diff_norm values in group are identical
-        return X, y
+
+        X = torch.tensor(X.toarray(), dtype=torch.float32)[None, :, :]
+        return X, torch.tensor(y)
 
 if __name__ == "__main__":
     """ Example usage: """
