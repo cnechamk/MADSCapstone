@@ -1,5 +1,6 @@
-import os.path
 import pickle
+import os.path
+from typing import Tuple
 
 import pandas as pd
 from torch.utils.data import Dataset
@@ -12,7 +13,7 @@ class FOMCImpactDataset(Dataset):
     """Beige Books and FOMC Impact on SP500 """
     def __init__(self, p_beige_books: str, p_fomc_impacts: str, vectorizer: TfidfVectorizer | str = None):
         """
-
+        Dataset to return encoded beige book and impact of FOMC on sp500
         Args:
             p_beige_books: path to beige_books.csv
             p_fomc_impacts: path to fomc_impact.csv
@@ -43,9 +44,19 @@ class FOMCImpactDataset(Dataset):
         self.df = df.drop(columns=['text'])  # dropped to save space
 
     def __len__(self):
+        """ Returns length of Dataset """
         return len(self.dates)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> Tuple:
+        """
+        Get vectorizer encoded beige book, sp500 impact due to FOMC
+        Args:
+            item: index
+
+        Returns:
+            - vectorizer encoded beige book, one row for each district and one column for each word
+            - impact FOMC had on sp500
+        """
         date = self.dates[item]
         group = self.df.loc[self.df['impact_date'] == date]
         index = group.district.sort_values().index
@@ -54,9 +65,11 @@ class FOMCImpactDataset(Dataset):
         return X, y
 
 if __name__ == "__main__":
-    p_bb = "/Users/joshfisher/PycharmProjects/MADSCapstone/Data/beige_books.csv"
-    p_fomc = "/Users/joshfisher/PycharmProjects/MADSCapstone/Data/fomc_impact.csv"
-    p_vec = "/Users/joshfisher/PycharmProjects/MADSCapstone/Data/tfidf_vectorizer.pkl"
+    """ Example usage: """
+
+    p_bb = "../Data/beige_books.csv"
+    p_fomc = "../Data/fomc_impact.csv"
+    p_vec = "../Data/tfidf_vectorizer.pkl"
 
     dset = FOMCImpactDataset(p_bb, p_fomc, p_vec)
-    x = dset[2]
+    x, y = dset[2]
