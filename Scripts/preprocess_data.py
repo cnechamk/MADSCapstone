@@ -1,3 +1,4 @@
+""" Various Preprocessing Scripts """
 import pandas as pd
 
 def parse_header(row):
@@ -122,7 +123,7 @@ def merge_beige_books_impact(df_beige_book: pd.DataFrame, df_fomc_impact: pd.Dat
         est_im_date = bb_date + time_delta
         date_diffs = (est_im_date - df_fomc_impact.date).abs()
         idxmin = date_diffs.idxmin()
-        impact = df_fomc_impact.iloc[idxmin]
+        impact = df_fomc_impact.iloc[idxmin].to_dict()
         impact['bb_date'] = bb_date
         rows.append(impact)
 
@@ -139,14 +140,3 @@ def merge_beige_books_impact(df_beige_book: pd.DataFrame, df_fomc_impact: pd.Dat
     )
 
     return df
-
-
-if __name__ == "__main__":
-    p_sp500 = "../../Data/sp500.csv"
-    p_fomc = "../../Data/fomc_dates.csv"
-    p_impact = "../../Data/fomc_impact.csv"
-
-    df_sp500 = pd.read_csv(p_sp500)
-    df_fomc = pd.read_csv(p_fomc)
-
-    fomc_impact(df_sp500, df_fomc, p_impact)
