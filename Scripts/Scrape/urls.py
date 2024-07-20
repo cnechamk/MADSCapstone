@@ -11,6 +11,7 @@ class _BaseURLs:
 
         return urljoin(cls.base_url, path)
 
+
 class MinnURLs(_BaseURLs):
     """ URLs for Minneapolis fed """
     base_url = "https://www.minneapolisfed.org"
@@ -54,10 +55,3 @@ class FedURLs(_BaseURLs):
     def yield_historical_materials_by_year(cls, start=1936, end=2018):
         for year in range(start, end+1, 1):
             yield year, cls.get_historical_materials_by_year(year)
-
-
-if __name__ == "__main__":
-    print(MinnURLs.urljoin("/beige-book-reports/2023/2023-04-cl"))
-    # hist_urls = fed_urls.yield_historical_materials_by_year()
-    # for url in hist_urls:
-    #     print(url)

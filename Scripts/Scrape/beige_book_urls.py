@@ -7,7 +7,7 @@ import os.path
 import mechanicalsoup
 import pandas as pd
 from tqdm import tqdm
-from Scripts.urls import MinnURLs
+from Scripts.Scrape.urls import MinnURLs
 
 def postprocess_bb_df(df: pd.DataFrame):
     """

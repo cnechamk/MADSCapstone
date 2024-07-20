@@ -6,7 +6,7 @@ import pandas as pd
 from boilerpy3 import extractors
 from tqdm.contrib.concurrent import process_map  # or thread_map
 
-from Scripts.urls import MinnURLs
+from Scripts.Scrape.urls import MinnURLs
 from Scripts.Scrape import beige_book_urls
 from Scripts.Scrape.utils import *
 
