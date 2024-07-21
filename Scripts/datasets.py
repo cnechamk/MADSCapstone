@@ -1,10 +1,13 @@
 """
 Various classes that subclass torch.utils.data.Dataset to be used for training
 """
-from typing import Tuple, Dict, Any
+import copy
+from typing import Tuple, Dict, Any, Sequence
 
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
+
+import numpy as np
 import pandas as pd
 from transformers import BertTokenizer
 
@@ -112,6 +115,62 @@ class FOMCImpactDataset(Dataset, _BertTokenizer):
 
         return X, torch.tensor(y)
 
+def train_val_test_split(
+        fomc_dset: FOMCImpactDataset,
+        ps=(0.8, 0.1, 0.1)
+) -> Tuple[FOMCImpactDataset, FOMCImpactDataset, FOMCImpactDataset]:
+    """
+    train val test split FOMCImpactDataset
+    Args:
+        fomc_dset: FOMCImpactDataset to split
+        ps: (train_proportion, val_prop, test_prop), must sum to 1. Default: (0.8, 0.1, 0.1)
+
+    Returns:
+        train dataset, val dataset, test dataset
+
+    """
+
+    assert sum(ps) == 1., "sum of ps must equal 1"
+    n = len(fomc_dset)
+    ns = np.array(ps) * n
+    ns = np.round(ns)
+    idxs = np.cumsum(ns).astype(int)
+
+    val_dset = copy.deepcopy(fomc_dset)
+    val_dset.dates = val_dset.dates[idxs[0]: idxs[1]]
+    test_dset = copy.deepcopy(fomc_dset)
+    test_dset.dates = test_dset.dates[idxs[1]:]
+    train_dset = fomc_dset
+    train_dset.dates = train_dset.dates[:idxs[0]]
+
+    return train_dset, val_dset, test_dset
+
+def to_dataloader(*fomc_dset: Sequence[FOMCImpactDataset], dataloader_kwargs):
+    """
+    FOMCImpactDataset to Dataloader
+    Args:
+        *fomc_dset: FOMCImpactDatasets
+        dataloader_kwargs: DataLoader kwarg
+
+    Returns:
+        dataloader for each dataset passed in
+
+    """
+    def collate_fn(batch):
+        Xs = []
+        ys = []
+
+        for X, y in batch:
+            Xs.append(X)
+            ys.append(y)
+
+        return batch
+
+    dataloader_kwargs['collate_fn'] = collate_fn
+
+    return (DataLoader(dset, **dataloader_kwargs) for dset in fomc_dset)
+
+
 if __name__ == "__main__":
     """ Example usage: """
 
@@ -119,4 +178,10 @@ if __name__ == "__main__":
     p_fomc = "../Data/fomc_impact.csv"
 
     dset = FOMCImpactDataset(p_bb, p_fomc)
-    x, y = dset[2]
+    train_loader, val_loader, test_loader = to_dataloader(
+        *train_val_test_split(fomc_dset=dset),
+        dataloader_kwargs={'batch_size': 4, 'shuffle': False}
+    )
+
+    train_iter = iter(train_loader)
+    print(next(train_iter))
