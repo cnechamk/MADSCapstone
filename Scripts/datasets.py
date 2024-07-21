@@ -5,20 +5,59 @@ from typing import Tuple
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
+from transformers import BertTokenizer
 
 from Scripts import preprocess_data as prepro
 
 
-class FOMCImpactDataset(Dataset):
+class _PreBertTokenize:
+    def __init__(self, pretrained_model_name_or_path):
+        self.tokenizer = BertTokenizer.from_pretrained(pretrained_model_name_or_path)
+
+    def tokenize(self, text, chunk_size=512):
+        out_d = {'input_ids': [], 'attention_mask': [], 'token_type_ids': []}
+        tokens = self.tokenizer(text, add_special_tokens=False, return_tensors='pt')
+
+        for name, token in tokens.items():
+            token_chunks = token[0].split(chunk_size - 2)  # -2 to account for [cls] and [sep] tokens
+            for chunk in token_chunks:
+                if name == "input_ids":
+                    # [CLS]/101 and seperator token [SEP]/102
+                    chunk = torch.concat((torch.tensor([101]), chunk, torch.tensor([102])))
+                elif name == "token_type_ids":
+                    pass
+                elif name == "attention_mask":
+                    chunk = torch.concat((torch.ones(1), chunk, torch.ones(1)))
+                else:
+                    raise ValueError(f"unexpected name when tokenizing: {name}")
+
+                chunk_len = chunk.size(0)
+                if chunk_len < chunk_size:
+                    pad_len = chunk_size - chunk_len
+                    chunk = torch.concat((chunk, torch.zeros(pad_len)))
+
+                out_d[name].append(chunk)
+
+        out_d = {name: torch.stack(tokens) for name, tokens in out_d.items()}
+
+        return {
+            'input_ids': out_d['input_ids'].long(),
+            'attention_mask': out_d['attention_mask'].int(),
+            'token_type_ids': out_d['token_type_ids'].int()
+        }
+
+
+class FOMCImpactDataset(Dataset, _PreBertTokenize):
     """Beige Books and FOMC Impact on SP500 """
-    def __init__(self, p_beige_books: str, p_fomc_impacts: str, vectorizer: TfidfVectorizer | str = None):
+    def __init__(self, p_beige_books: str, p_fomc_impacts: str):
         """
         Dataset to return encoded beige book and impact of FOMC on sp500
         Args:
             p_beige_books: path to beige_books.csv
             p_fomc_impacts: path to fomc_impact.csv
         """
+        Dataset.__init__(self)
+        _PreBertTokenize.__init__(self, 'ProsusAI/finbert')
 
         df_bb = pd.read_csv(p_beige_books)
         df_bb.date = pd.to_datetime(df_bb.date)
@@ -28,21 +67,8 @@ class FOMCImpactDataset(Dataset):
 
         df = prepro.merge_beige_books_impact(df_bb, df_fomc).reset_index()
 
-        if vectorizer is None:
-            vectorizer = TfidfVectorizer(stop_words='english')
-        elif isinstance(vectorizer, str):
-            assert os.path.splitext(vectorizer)[-1] == ".pkl", "if passing vectorizer path, must be a pickle file"
-            with open(vectorizer, 'rb') as f:
-                vectorizer = pickle.load(f)
-
-        if isinstance(vectorizer, TfidfVectorizer):
-            self.vectorizer = vectorizer
-        else:
-            raise TypeError('Expected vectorizer to be a TfidfVectorizer, a path to a TfidfVectorizer, or None')
-
-        self.X = self.vectorizer.fit_transform(df.text)
         self.dates = df["impact_date"].sort_values(ascending=False).unique().tolist()
-        self.df = df.drop(columns=['text'])  # dropped to save space
+        self.df = df
 
     def __len__(self):
         """ Returns length of Dataset """
@@ -60,11 +86,9 @@ class FOMCImpactDataset(Dataset):
         """
         date = self.dates[item]
         group = self.df.loc[self.df['impact_date'] == date]
-        index = group.district.sort_values().index
-        X = self.X[index]
+        X = list(map(self.tokenize, group.sort_values('district').text))
         y = group.diff_norm.iloc[0]  # all diff_norm values in group are identical
 
-        X = torch.tensor(X.toarray(), dtype=torch.float32)[None, :, :]
         return X, torch.tensor(y)
 
 if __name__ == "__main__":
@@ -72,7 +96,7 @@ if __name__ == "__main__":
 
     p_bb = "../Data/beige_books.csv"
     p_fomc = "../Data/fomc_impact.csv"
-    p_vec = "../Data/tfidf_vectorizer.pkl"
 
-    dset = FOMCImpactDataset(p_bb, p_fomc, p_vec)
+    dset = FOMCImpactDataset(p_bb, p_fomc)
     x, y = dset[2]
+
