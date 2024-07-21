@@ -1,5 +1,8 @@
 """ Various Preprocessing Scripts """
 import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 
 def parse_header(row):
     """ parse historical calendar data """
@@ -140,3 +143,29 @@ def merge_beige_books_impact(df_beige_book: pd.DataFrame, df_fomc_impact: pd.Dat
     )
 
     return df
+
+def pca(p_beige_books: str, p_fomc_impact: str, vectorizer: TfidfVectorizer):
+    """
+    5 components explained about 10% of variance
+    100 components explained about 30% of variance
+    1000 components explained
+    Args:
+        p_beige_books:
+        p_fomc_impact:
+        vectorizer:
+
+    Returns:
+
+    """
+    df_beige_book = pd.read_csv(p_beige_books)
+    df_beige_book.date = pd.to_datetime(df_beige_book.date)
+
+    df_fomc_impact = pd.read_csv(p_fomc_impact)
+    df_fomc_impact.date = pd.to_datetime(df_fomc_impact.date)
+    df_fomc_impact = df_fomc_impact.dropna()
+
+    df = merge_beige_books_impact(df_beige_book, df_fomc_impact)
+
+    text_vec = vectorizer.transform(df.text)
+    pca = PCA(1000)
+    x = pca.fit_transform(text_vec)
