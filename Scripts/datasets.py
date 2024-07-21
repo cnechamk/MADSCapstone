@@ -1,6 +1,7 @@
-import pickle
-import os.path
-from typing import Tuple
+"""
+Various classes that subclass torch.utils.data.Dataset to be used for training
+"""
+from typing import Tuple, Dict, Any
 
 import torch
 from torch.utils.data import Dataset
@@ -10,11 +11,31 @@ from transformers import BertTokenizer
 from Scripts import preprocess_data as prepro
 
 
-class _PreBertTokenize:
-    def __init__(self, pretrained_model_name_or_path):
+class _BertTokenizer:
+    """
+    Bert Tokenizer
+    """
+    def __init__(self, pretrained_model_name_or_path: str, device: Any):
+        """
+        initialize a Bert Tokenizer
+        Args:
+            pretrained_model_name_or_path: see transformers.BertTokenizer.from_pretrained
+        """
         self.tokenizer = BertTokenizer.from_pretrained(pretrained_model_name_or_path)
+        self.device = device
 
-    def tokenize(self, text, chunk_size=512):
+    def tokenize(self, text: str, chunk_size=512) -> Dict[str, torch.Tensor]:
+        """
+        Tokenize a text and chunk into chunk_size if applicable
+
+        adapted from https://towardsdatascience.com/how-to-apply-transformers-to-any-length-of-text-a5601410af7f
+        Args:
+            text: text to be tokenized
+            chunk_size: size of each chunk
+
+        Returns:
+            Dictionary containing tokens as pytorch tensors
+        """
         out_d = {'input_ids': [], 'attention_mask': [], 'token_type_ids': []}
         tokens = self.tokenizer(text, add_special_tokens=False, return_tensors='pt')
 
@@ -38,7 +59,7 @@ class _PreBertTokenize:
 
                 out_d[name].append(chunk)
 
-        out_d = {name: torch.stack(tokens) for name, tokens in out_d.items()}
+        out_d = {name: torch.stack(tokens).to(self.device) for name, tokens in out_d.items()}
 
         return {
             'input_ids': out_d['input_ids'].long(),
@@ -47,9 +68,9 @@ class _PreBertTokenize:
         }
 
 
-class FOMCImpactDataset(Dataset, _PreBertTokenize):
+class FOMCImpactDataset(Dataset, _BertTokenizer):
     """Beige Books and FOMC Impact on SP500 """
-    def __init__(self, p_beige_books: str, p_fomc_impacts: str):
+    def __init__(self, p_beige_books: str, p_fomc_impacts: str, device='cpu'):
         """
         Dataset to return encoded beige book and impact of FOMC on sp500
         Args:
@@ -57,7 +78,7 @@ class FOMCImpactDataset(Dataset, _PreBertTokenize):
             p_fomc_impacts: path to fomc_impact.csv
         """
         Dataset.__init__(self)
-        _PreBertTokenize.__init__(self, 'ProsusAI/finbert')
+        _BertTokenizer.__init__(self, 'ProsusAI/finbert', device=device)
 
         df_bb = pd.read_csv(p_beige_books)
         df_bb.date = pd.to_datetime(df_bb.date)
@@ -99,4 +120,3 @@ if __name__ == "__main__":
 
     dset = FOMCImpactDataset(p_bb, p_fomc)
     x, y = dset[2]
-
