@@ -72,6 +72,10 @@ class _BertTokenizer:
 
 
 class FOMCImpactDataset(Dataset, _BertTokenizer):
+    DISTRICTS = [
+        'Atlanta', 'Boston', 'Chicago', 'Cleveland', 'Dallas', 'Kansas City', 'Minneapolis',
+        'National Summary', 'New York', 'Philadelphia', 'Richmond', 'San Francisco', 'St Louis'
+    ]
     """Beige Books and FOMC Impact on SP500 """
     def __init__(self, p_beige_books: str, p_fomc_impacts: str, device='cpu'):
         """
@@ -89,9 +93,9 @@ class FOMCImpactDataset(Dataset, _BertTokenizer):
         df_fomc = pd.read_csv(p_fomc_impacts)
         df_fomc.date = pd.to_datetime(df_fomc.date)
 
-        df = prepro.merge_beige_books_impact(df_bb, df_fomc).reset_index()
+        df = prepro.merge_beige_books_impact(df_bb, df_fomc).reset_index(drop=True)
 
-        self.dates = df["impact_date"].sort_values(ascending=False).unique().tolist()
+        self.dates = df["bb_date"].sort_values(ascending=False).unique()
         self.df = df
 
     def __len__(self):
@@ -109,7 +113,22 @@ class FOMCImpactDataset(Dataset, _BertTokenizer):
             - impact FOMC had on sp500
         """
         date = self.dates[item]
-        group = self.df.loc[self.df['impact_date'] == date]
+        group = self.df.loc[self.df['bb_date'] == date]
+        group = group.drop_duplicates()
+
+        districts = group.district.unique().tolist()
+        if len(districts) < 13:
+            add_districts = [d for d in self.DISTRICTS if d not in districts]
+            rows = []
+            for district in add_districts:
+                tmp = group.iloc[0].to_dict()
+                tmp['district'] = district
+                tmp['text'] = ""
+                rows.append(tmp)
+
+            tmp = pd.DataFrame.from_records(rows)
+            group = pd.concat((group, tmp))
+
         X = list(map(self.tokenize, group.sort_values('district').text))
         y = group.diff_norm.iloc[0]  # all diff_norm values in group are identical
 
