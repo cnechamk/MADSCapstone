@@ -55,7 +55,7 @@ def train(
         print_freq = 10
 ):
     model = model.to(device)
-    metric_fns = {'mape': ops.mape}
+    metric_fns = {'mape': ops.mape, 'mae': ops.mae, 'rmse': ops.rmse, 'mse': ops.mse}
     accum_metrics = partial(_accum_metrics, metric_fns=metric_fns)
     save_dir = os.path.join(save_directory, model_name)
     os.makedirs(save_dir, exist_ok=True)
@@ -69,7 +69,6 @@ def train(
         train_n = len(train_loader)
         for i, batch in tqdm(enumerate(train_loader), total=train_n):
             i += 1
-            if i > 1: break
             model.train()
             optimizer.zero_grad()
 
@@ -97,7 +96,6 @@ def train(
         with torch.no_grad():
             for i, batch in tqdm(enumerate(val_loader), total=val_n):
                 i += 1
-                if i > 1: break
                 y_true = []
                 y_pred = []
                 for X, y in batch:
@@ -134,11 +132,11 @@ if __name__ == "__main__":
     p_fomc = "../Data/fomc_impact.csv"
 
     save_dir = "../Data/Models"
-    model_name = 'Test'
-    device = 'mps'
+    model_name = 'Second'
+    device = 0
     epochs = 100
-    lr = 1e-3
-    batch_size = 10
+    lr = 1e-4
+    batch_size = 5
 
     dset = FOMCImpactDataset(p_bb, p_fomc, device=device)
     train_loader, val_loader, test_loader = to_dataloader(
@@ -160,6 +158,6 @@ if __name__ == "__main__":
         epochs,
         model_name=model_name,
         save_directory=save_dir,
-        print_freq=1
+        print_freq=5
     )
 
