@@ -113,7 +113,7 @@ class FOMCImpactDataset(Dataset, _BertTokenizer):
         X = list(map(self.tokenize, group.sort_values('district').text))
         y = group.diff_norm.iloc[0]  # all diff_norm values in group are identical
 
-        return X, torch.tensor(y)
+        return X, torch.tensor([y], device=self.device, dtype=torch.float32)
 
 def train_val_test_split(
         fomc_dset: FOMCImpactDataset,
@@ -157,13 +157,6 @@ def to_dataloader(*fomc_dset: Sequence[FOMCImpactDataset], dataloader_kwargs):
 
     """
     def collate_fn(batch):
-        Xs = []
-        ys = []
-
-        for X, y in batch:
-            Xs.append(X)
-            ys.append(y)
-
         return batch
 
     dataloader_kwargs['collate_fn'] = collate_fn
