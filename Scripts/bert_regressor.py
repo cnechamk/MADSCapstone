@@ -4,46 +4,6 @@ import torch.nn.functional as F
 from transformers import BertForSequenceClassification
 
 
-class LSTM(nn.Module):
-    def __init__(self, input_size=13, hidden_size=64, num_layers=1):
-        super().__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers=num_layers, batch_first=True)
-        # nn.init.xavier_normal_(self.lstm.all_weights)
-        self.fn_0 = nn.Linear(13 * 27973, input_size * hidden_size)
-
-        self.fn_1 = nn.Linear(input_size * hidden_size, 512)
-        self.bn_1 = nn.BatchNorm1d(512)
-
-        self.fn_2 = nn.Linear(512, 256)
-        self.bn_2 = nn.BatchNorm1d(256)
-
-        self.fn_3 = nn.Linear(256, 128)
-        self.bn_3 = nn.BatchNorm1d(128)
-
-        self.fn_4 = nn.Linear(128, 1)
-
-    def forward(self, x: torch.Tensor):
-        # x, _ = self.lstm(x)
-        x = x.flatten(1)
-        x = self.fn_0(x)
-
-        x = self.fn_1(x)
-        x = self.bn_1(x)
-        x = F.tanh(x)
-
-        x = self.fn_2(x)
-        x = self.bn_2(x)
-        x = F.tanh(x)
-
-        x = self.fn_3(x)
-        x = self.bn_3(x)
-        x = F.tanh(x)
-
-        x = self.fn_4(x)
-        x = F.tanh(x) / 10
-
-        return x
-
 class BertRegressor(nn.Module):
     def __init__(self, start_channels=32):
         super().__init__()

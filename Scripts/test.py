@@ -4,7 +4,7 @@ import torch
 import pandas as pd
 from tqdm import tqdm
 
-from Scripts.models import BertRegressor
+from Scripts.bert_regressor import BertRegressor
 from Scripts.datasets import FOMCImpactDataset, to_dataloader, train_val_test_split
 
 

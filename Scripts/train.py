@@ -9,7 +9,7 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 import Scripts.operations as ops
-from Scripts.models import BertRegressor
+from Scripts.bert_regressor import BertRegressor
 
 
 def _accum_metrics(
@@ -109,7 +109,7 @@ def train(
 
                 loss = loss_fn(y_pred, y_true)
 
-                val_metrics = accum_metrics(y_pred, y_true, train_metrics, loss=loss.item())
+                val_metrics = accum_metrics(y_pred, y_true, val_metrics, loss=loss.item())
 
                 if (i % print_freq) == 0:
                     tmp = {name: vals[-1] for name, vals in val_metrics.items()}
