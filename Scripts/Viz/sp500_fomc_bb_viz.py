@@ -1,11 +1,6 @@
 import pandas as pd
 import altair as alt
 
-from Scripts.alt_themes import vox_theme
-
-alt.themes.register('vox_theme', lambda: vox_theme)
-alt.themes.enable('vox_theme')
-
 selection = alt.selection_interval(bind='scales')
 
 def _to_datetime_filter(df, date_col='date', filter_=None):
@@ -28,8 +23,8 @@ sp500_chart = alt.Chart(df_sp500).mark_line().encode(
     y=alt.Y("close:Q", scale=alt.Scale(type='log', base=10)).axis(title="SP500 Closing Price"),
     color=alt.ColorValue("#c8c8c8")
 ).properties(
-    width=1200,
-    height=600
+    width=1000,
+    height=500
 ).add_params(
     selection
 )
@@ -61,7 +56,7 @@ df_bb.date = pd.to_datetime(df_bb.date)
 df_bb = _to_datetime_filter(df_bb, filter_=GE_1970)
 df_bb = df_bb.merge(df_sp500, how='left', on='date')
 
-bind_checkbox = alt.binding_checkbox(name='Beige Book Ticks (beige): ')
+bind_checkbox = alt.binding_checkbox(name='Add Beige Book Ticks (beige): ')
 bb_checkbox = alt.param(bind=bind_checkbox)
 
 bb_chart = alt.Chart(df_bb).mark_tick(orient='vertical').encode(
@@ -74,12 +69,14 @@ bb_chart = alt.Chart(df_bb).mark_tick(orient='vertical').encode(
     bb_checkbox
 )
 
+# FOMC Dates
+
 p = "/Users/joshfisher/PycharmProjects/MADSCapstone/Data/fomc_impact.csv"
 df_fomc = pd.read_csv(p)
 df_fomc = _to_datetime_filter(df_fomc, filter_=GE_1970)
 df_fomc = df_fomc.merge(df_sp500[['date', 'close']], how='left', on='date')
 
-bind_checkbox = alt.binding_checkbox(name='FOMC Ticks (green, red): ')
+bind_checkbox = alt.binding_checkbox(name='Add FOMC Date Ticks (green, red): ')
 fomc_checkbox = alt.param(bind=bind_checkbox)
 
 fomc_chart = alt.Chart(df_fomc).mark_tick(orient='vertical').encode(
@@ -91,7 +88,6 @@ fomc_chart = alt.Chart(df_fomc).mark_tick(orient='vertical').encode(
 ).add_params(
     fomc_checkbox
 )
-
+#
 chart = sp500_chart + fomc_chart + bb_chart
-
-chart.save("/Users/joshfisher/PycharmProjects/MADSCapstone/Data/tmp.html")
+chart.save("Data/Viz/sp500_fomc_bb_viz.html")
