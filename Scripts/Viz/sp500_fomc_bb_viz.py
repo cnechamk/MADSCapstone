@@ -14,7 +14,7 @@ def _to_datetime_filter(df, date_col='date', filter_=None):
 GE_1970 = lambda df, date_col: df.loc[df[date_col] >= pd.to_datetime("1970-01-01")]
 
 
-p = "/Users/joshfisher/PycharmProjects/MADSCapstone/Data/sp500.csv"
+p = "Data/sp500.csv"
 df_sp500 = pd.read_csv(p)
 df_sp500 = _to_datetime_filter(df_sp500, filter_=GE_1970)
 
@@ -29,49 +29,57 @@ sp500_chart = alt.Chart(df_sp500).mark_line().encode(
     selection
 )
 
-# FED FUND
-
-# p = "/Users/joshfisher/PycharmProjects/MADSCapstone/Data/fed_funds.csv"
-# df_funds = pd.read_csv(p)
-# df_funds = _to_datetime_filter(df_funds, filter_=GE_1970)
-#
-# fed_chart = alt.Chart(df_funds).mark_line().encode(
-#     x='date:T',
-#     y='fed_fund:Q',
-#     color=alt.ColorValue("#646464")
-# ).properties(
-#     width=1200,
-#     height=600
-# ).add_params(
-#     selection
-# )
-
 # ========== Ticks ==========
 # BEIGE BOOK
+# chat gpt helped with the conditional layering of the tooltips
 
-p = "/Users/joshfisher/PycharmProjects/MADSCapstone/Data/beige_books_kws.csv"
+p = "Data/beige_books_kws.csv"
 df_bb = pd.read_csv(p)
+df_bb.date = pd.to_datetime(df_bb.date)
+
+df_bb = df_bb.pivot_table(
+    index='date',
+    values='keywords',
+    columns='district',
+    aggfunc=lambda x: x.str.strip("'[]'")
+)
+
+districts = df_bb.columns
+df_bb = df_bb.reset_index()
 
 df_bb.date = pd.to_datetime(df_bb.date)
 df_bb = _to_datetime_filter(df_bb, filter_=GE_1970)
 df_bb = df_bb.merge(df_sp500, how='left', on='date')
 
+# Create the binding and parameter for the checkbox
 bind_checkbox = alt.binding_checkbox(name='Add Beige Book Ticks (beige): ')
 bb_checkbox = alt.param(bind=bind_checkbox)
 
-bb_chart = alt.Chart(df_bb).mark_tick(orient='vertical').encode(
+# Chart with the tooltip
+bb_chart_with_tooltip = alt.Chart(df_bb).mark_tick(orient='vertical', thickness=3).encode(
     x=alt.X("date:T"),
     y=alt.Y('close:Q'),
     color=alt.ColorValue('#a88f74'),
-    opacity=alt.condition(bb_checkbox, alt.value(1.), alt.value(0.)),
-    tooltip=alt.condition(bb_checkbox, "keywords:N", alt.value(None))
-).add_params(
-    bb_checkbox
+    opacity=alt.value(1.0),  # Always fully opaque when visible
+    tooltip=[alt.Tooltip(district, type='nominal') for district in districts]
+)
+
+# Chart without the tooltip
+bb_chart_without_tooltip = alt.Chart(df_bb).mark_tick(orient='vertical', thickness=3).encode(
+    x=alt.X("date:T"),
+    y=alt.Y('close:Q'),
+    color=alt.ColorValue('#a88f74'),
+    opacity=alt.value(1.0)  # Always fully opaque when visible
+)
+
+bb_chart = alt.layer(
+    bb_chart_with_tooltip.add_params(bb_checkbox).transform_filter(bb_checkbox),
+    bb_chart_without_tooltip.transform_filter(alt.datum.bb_checkbox == False)
 )
 
 # FOMC Dates
 
-p = "/Users/joshfisher/PycharmProjects/MADSCapstone/Data/fomc_impact.csv"
+p = "Data/fomc_impact.csv"
 df_fomc = pd.read_csv(p)
 df_fomc = _to_datetime_filter(df_fomc, filter_=GE_1970)
 df_fomc = df_fomc.merge(df_sp500[['date', 'close']], how='left', on='date')
@@ -79,7 +87,7 @@ df_fomc = df_fomc.merge(df_sp500[['date', 'close']], how='left', on='date')
 bind_checkbox = alt.binding_checkbox(name='Add FOMC Date Ticks (green, red): ')
 fomc_checkbox = alt.param(bind=bind_checkbox)
 
-fomc_chart = alt.Chart(df_fomc).mark_tick(orient='vertical').encode(
+fomc_chart = alt.Chart(df_fomc).mark_tick(orient='vertical', thickness=3).encode(
     x=alt.X("date:T"),
     y=alt.Y('close:Q'),
     color=alt.condition(alt.datum.diff_norm > 0, alt.ColorValue('#64ff64'), alt.ColorValue('#ff6464')),
