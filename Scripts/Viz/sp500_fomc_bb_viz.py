@@ -1,3 +1,4 @@
+import shutil
 import pandas as pd
 import altair as alt
 
@@ -99,3 +100,4 @@ fomc_chart = alt.Chart(df_fomc).mark_tick(orient='vertical', thickness=3).encode
 #
 chart = sp500_chart + fomc_chart + bb_chart
 chart.save("Data/Viz/sp500_fomc_bb_viz.html")
+shutil.copy("Data/Viz/sp500_fomc_bb_viz.html", "embed/sp500_fomc_bb_viz.html")
