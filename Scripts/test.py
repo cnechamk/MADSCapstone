@@ -5,7 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from Scripts.bert_regressor import BertRegressor
-from Scripts.datasets import FOMCImpactDataset, to_dataloader, train_val_test_split
+from Scripts.fomc_datasets import FOMCImpactDataset, train_val_test_split
 
 
 def main(model_path: Path, device='mps'):

@@ -7,8 +7,8 @@ from tqdm import tqdm
 import torch
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
+from sklearn.metrics import r2_score
 
-import Scripts.operations as ops
 from Scripts.bert_regressor import BertRegressor
 
 
@@ -55,7 +55,7 @@ def train(
         print_freq = 10
 ):
     model = model.to(device)
-    metric_fns = {'mape': ops.mape}
+    metric_fns = {'r2': r2_score}
     accum_metrics = partial(_accum_metrics, metric_fns=metric_fns)
     save_dir = os.path.join(save_directory, model_name)
     os.makedirs(save_dir, exist_ok=True)
@@ -127,8 +127,8 @@ if __name__ == "__main__":
     import torch.nn as nn
     from torch.optim import Adam
 
-    from Scripts.models import BertRegressor
-    from Scripts.datasets import FOMCImpactDataset, to_dataloader, train_val_test_split
+    from Scripts.bert_regressor import BertRegressor
+    from Scripts.fomc_datasets import FOMCImpactDataset, to_dataloader, train_val_test_split
 
     p_bb = "../Data/beige_books.csv"
     p_fomc = "../Data/fomc_impact.csv"
