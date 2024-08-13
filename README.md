@@ -25,7 +25,5 @@ TODO: steps for reproducing scraping
 6. combine 
 
 # Viewing the report:
-1. [download main/](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2FTheFish18%2FMADSCapstone%2Ftree%2Fmain%2Fmain)
+1. [download](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2FTheFish18%2FMADSCapstone%2Ftree%2Fmain%2Fmain) main/
 2. open main.html
-
-
