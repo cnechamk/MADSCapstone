@@ -1,4 +1,8 @@
 # CUSTOM
+.ipynb_checkpoints/
+.notebooks/
+data/
+models/
 Data/
 .idea/
 scratch.py
@@ -6,6 +10,7 @@ scratch.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 

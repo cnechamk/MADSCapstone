@@ -24,6 +24,10 @@ TODO: steps for reproducing scraping
 5. pull fed funds data
 6. combine 
 
+# Scraping and Fitting FOMC data:
+To reproduce the FOMC models:
+`python FOMC_train.py '2008-01-01' '2024-07-01' --model philschmid/bge-base-financial-matryoshka`
+
 # Viewing the report:
 1. [download](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2FTheFish18%2FMADSCapstone%2Ftree%2Fmain%2Fmain) main/
 2. open main.html
