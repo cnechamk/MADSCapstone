@@ -40,6 +40,7 @@ def accuracy_plot(X, y, models, threshold=0):
 
     grid.fig.suptitle("Balanced Accuracy Score")
     grid.fig.set_constrained_layout(True)
+    grid.fig.set_size_inches(15, 5)
 
     grid.fig.savefig("./plots/accuracy_plot.png")
 
@@ -73,8 +74,9 @@ def correlation_plot(X, y, models):
             ax.plot("Day", "high", data=model_df, color=cmap[i], alpha=0.15, ls="--")
             ax.plot("Day", "low", data=model_df, color=cmap[i], alpha=0.15, ls="--")
 
-    grid.fig.suptitle("Spearman Correlation with Confidence Intervals")
+    grid.fig.suptitle("Pearson Correlation with Confidence Intervals")
     grid.fig.set_constrained_layout(True)
+    grid.fig.set_size_inches(15, 5)
 
     grid.fig.savefig("./plots/correlation_plot.png")
 
@@ -97,7 +99,7 @@ def wordclouds(vocab, features, coefs):
         topic_freqs = topic_freqs[topic_freqs > 0]
         wc.generate_from_frequencies(topic_freqs)
         ax.imshow(wc)
-        ax.set_title(f"Topic {i}")
+        ax.set_title(f"Topic {i+1}")
         ax.set_axis_off()
 
     fig.set_figwidth(15)
@@ -111,26 +113,30 @@ def wordclouds(vocab, features, coefs):
 def topic_bar_plot(coefs, tickers):
 
     df = pd.DataFrame(coefs, tickers).groupby("Ticker").mean().T
-    df.index = [f"Topic {i}" for i in range(len(df))]
+    df.index = [f"Topic {i+1}" for i in range(len(df))]
     df.index.name = "Topic"
     df = df[tickers.unique()]
     df = df.melt(ignore_index=False).reset_index()
 
     grid = sns.catplot(
         df,
-        x="Topic",
-        y="value",
+        y="Topic",
+        x="value",
         hue="Topic",
         col="Ticker",
-        col_wrap=3,
+        # col_wrap=3,
         kind="bar",
-        sharey=False,
+        # sharey=False,
         sharex=False,
         palette="Set2"
     )
-
+    for ax in grid.fig.axes:
+        title = ax.get_title().split(' ')[2:]
+        title = ' '.join(title)
+        ax.set_title(title)
     grid.fig.suptitle("Coeficient of each Topic")
     grid.fig.set_constrained_layout(True)
+    grid.fig.set_size_inches(10, 2)
 
     grid.fig.savefig("./plots/topic_bar_plot.png")
 
